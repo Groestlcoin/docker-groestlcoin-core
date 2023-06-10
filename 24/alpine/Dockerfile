@@ -7,12 +7,14 @@ RUN apk --no-cache add automake
 RUN apk --no-cache add build-base
 RUN apk --no-cache add libressl
 
-ENV BERKELEYDB_VERSION=db-4.8.30.NC
+ENV BERKELEYDB_VERSION=db-5.3.28.NC
 ENV BERKELEYDB_PREFIX=/opt/${BERKELEYDB_VERSION}
 
 RUN wget https://download.oracle.com/berkeley-db/${BERKELEYDB_VERSION}.tar.gz
 RUN tar -xzf *.tar.gz
-RUN sed s/__atomic_compare_exchange/__atomic_compare_exchange_db/g -i ${BERKELEYDB_VERSION}/dbinc/atomic.h
+RUN sed s/__atomic_compare_exchange/__atomic_compare_exchange_db/g -i ${BERKELEYDB_VERSION}/src/dbinc/atomic.h
+RUN sed s/atomic_init/atomic_init_db/g -i ${BERKELEYDB_VERSION}/src/dbinc/atomic.h ${BERKELEYDB_VERSION}/src/mp/mp_region.c ${BERKELEYDB_VERSION}/src/mp/mp_mvcc.c ${BERKELEYDB_VERSION}/src/mp/mp_fget.c ${BERKELEYDB_VERSION}/src/mutex/mut_method.c ${BERKELEYDB_VERSION}/src/mutex/mut_tas.c
+RUN sed s/WinIoCtl.h/winioctl.h/g -i ${BERKELEYDB_VERSION}/src/dbinc/win_db.h
 RUN mkdir -p ${BERKELEYDB_PREFIX}
 
 WORKDIR /${BERKELEYDB_VERSION}/build_unix
@@ -22,8 +24,8 @@ RUN make -j4
 RUN make install
 RUN rm -rf ${BERKELEYDB_PREFIX}/docs
 
-# Build stage for Bitcoin Core
-FROM alpine as bitcoin-core
+# Build stage for Groestlcoin Core
+FROM alpine as groestlcoin-core
 
 COPY --from=berkeleydb /opt /opt
 
@@ -43,18 +45,7 @@ RUN apk --no-cache add sqlite-dev
 RUN apk --no-cache add zeromq-dev
 RUN set -ex \
   && for key in \
-  152812300785C96444D3334D17565732E08E5E41 \
-  0AD83877C1F0CD1EE9BD660AD7CC770B81FD22A8 \
-  590B7292695AFFA5B672CBB2E13FC145CD3F4304 \
-  CFB16E21C950F67FA95E558F2EEB9F5CC09526C1 \
-  F4FC70F07310028424EFC20A8E4256593F177720 \
-  D1DBF2C4B96F2DEBF4C16654410108112E7EA81F \
   287AE4CA1187C68C08B49CB2D11BD4F33F1DB499 \
-  9DEAE0DC7063249FB05474681E4AED62986CD25D \
-  3EB0DEE6004A13BE5A0CC758BF2978B068054311 \
-  ED9BDF7AD6A55E232E84524257FF9BDBCC301009 \
-  28E72909F1717FE9607754F8A7BEB2621678D37D \
-  79D00BAC68B56D422F945A8F8E3A8F3247DBCBBF \
   ; do \
   gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
   gpg --batch --keyserver keys.openpgp.org --recv-keys "$key" || \
@@ -63,22 +54,22 @@ RUN set -ex \
   gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
   done
 
-ENV BITCOIN_VERSION=24.0.1
-ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
+ENV GROESTLCOIN_VERSION=24.0.1
+ENV GROESTLCOIN_PREFIX=/opt/groestlcoin-${GROESTLCOIN_VERSION}
 
-RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS
-RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
-RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
+RUN wget https://github.com/Groestlcoin/groestlcoin/releases/download/v${GROESTLCOIN_VERSION}/SHA256SUMS
+RUN wget https://github.com/Groestlcoin/groestlcoin/releases/download/v${GROESTLCOIN_VERSION}/SHA256SUMS.asc
+RUN wget https://github.com/Groestlcoin/groestlcoin/releases/download/v${GROESTLCOIN_VERSION}/groestlcoin-${GROESTLCOIN_VERSION}.tar.gz
 RUN gpg --verify SHA256SUMS.asc SHA256SUMS
-RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS | sha256sum -c -
+RUN grep " groestlcoin-${GROESTLCOIN_VERSION}.tar.gz\$" SHA256SUMS | sha256sum -c -
 RUN tar -xzf *.tar.gz
 
-WORKDIR /bitcoin-${BITCOIN_VERSION}
+WORKDIR /groestlcoin-${GROESTLCOIN_VERSION}
 
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat/compat.h
 RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/include/ \
-  --prefix=${BITCOIN_PREFIX} \
+  --prefix=${GROESTLCOIN_PREFIX} \
   --mandir=/usr/share/man \
   --disable-tests \
   --disable-bench \
@@ -90,11 +81,11 @@ RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/incl
   --with-daemon
 RUN make -j4
 RUN make install
-RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
-RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
-RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
-RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
-RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
+RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoin-cli
+RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoin-tx
+RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoind
+RUN strip ${GROESTLCOIN_PREFIX}/lib/libgroestlcoinconsensus.a
+RUN strip ${GROESTLCOIN_PREFIX}/lib/libgroestlcoinconsensus.so.0.0.0
 
 # Build stage for compiled artifacts
 FROM alpine
@@ -102,12 +93,10 @@ FROM alpine
 ARG UID=100
 ARG GID=101
 
-LABEL maintainer.0="João Fonseca (@joaopaulofonseca)" \
-  maintainer.1="Pedro Branco (@pedrobranco)" \
-  maintainer.2="Rui Marinho (@ruimarinho)"
+LABEL maintainer="Groestlcoin developers <groestlcoin@gmail.com>"
 
-RUN addgroup bitcoin --gid ${GID} --system
-RUN adduser --uid ${UID} --system bitcoin --ingroup bitcoin
+RUN addgroup groestlcoin --gid ${GID} --system
+RUN adduser --uid ${UID} --system groestlcoin --ingroup groestlcoin
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add \
   boost-filesystem \
@@ -119,20 +108,20 @@ RUN apk --no-cache add \
   sqlite-dev \
   su-exec
 
-ENV BITCOIN_DATA=/home/bitcoin/.bitcoin
-ENV BITCOIN_VERSION=24.0.1
-ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
-ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
+ENV GROESTLCOIN_DATA=/home/groestlcoin/.groestlcoin
+ENV GROESTLCOIN_VERSION=24.0.1
+ENV GROESTLCOIN_PREFIX=/opt/groestlcoin-${GROESTLCOIN_VERSION}
+ENV PATH=${GROESTLCOIN_PREFIX}/bin:$PATH
 
-COPY --from=bitcoin-core /opt /opt
+COPY --from=groestlcoin-core /opt /opt
 COPY docker-entrypoint.sh /entrypoint.sh
 
-VOLUME ["/home/bitcoin/.bitcoin"]
+VOLUME ["/home/groestlcoin/.groestlcoin"]
 
-EXPOSE 8332 8333 18332 18333 18444
+EXPOSE 1441 1331 17766 17777 18443 18888 31331 31441
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-RUN bitcoind -version | grep "Bitcoin Core version v${BITCOIN_VERSION}"
+RUN groestlcoind -version | grep "Groestlcoin Core version v${GROESTLCOIN_VERSION}"
 
-CMD ["bitcoind"]
+CMD ["groestlcoind"]

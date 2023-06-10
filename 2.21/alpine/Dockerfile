@@ -48,20 +48,19 @@ RUN set -ex \
   287AE4CA1187C68C08B49CB2D11BD4F33F1DB499 \
   ; do \
     gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
-    gpg --batch --keyserver keys.openpgp.org --recv-keys "$key" || \
+    gpg --batch --keyserver pgp.mit.edu --recv-keys "$key" || \
     gpg --batch --keyserver keyserver.pgp.com --recv-keys "$key" || \
     gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" || \
     gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
   done
 
-ENV GROESTLCOIN_VERSION=22.0
+ENV GROESTLCOIN_VERSION=2.21.1
 ENV GROESTLCOIN_PREFIX=/opt/groestlcoin-${GROESTLCOIN_VERSION}
 
-RUN wget https://github.com/Groestlcoin/groestlcoin/releases/download/v${GROESTLCOIN_VERSION}/SHA256SUMS
 RUN wget https://github.com/Groestlcoin/groestlcoin/releases/download/v${GROESTLCOIN_VERSION}/SHA256SUMS.asc
 RUN wget https://github.com/Groestlcoin/groestlcoin/releases/download/v${GROESTLCOIN_VERSION}/groestlcoin-${GROESTLCOIN_VERSION}.tar.gz
-RUN gpg --verify SHA256SUMS.asc SHA256SUMS
-RUN grep " groestlcoin-${GROESTLCOIN_VERSION}.tar.gz\$" SHA256SUMS | sha256sum -c -
+RUN gpg --verify SHA256SUMS.asc
+RUN grep " groestlcoin-${GROESTLCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 RUN tar -xzf *.tar.gz
 
 WORKDIR /groestlcoin-${GROESTLCOIN_VERSION}
@@ -96,21 +95,21 @@ ARG GID=101
 
 LABEL maintainer="Groestlcoin developers <groestlcoin@gmail.com>"
 
-RUN addgroup groestlcoin --gid ${GID} --system
-RUN adduser --uid ${UID} --system groestlcoin --ingroup groestlcoin
+RUN addgroup -S groestlcoin
+RUN adduser -G groestlcoin -H -S groestlcoin
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add \
   boost-filesystem \
   boost-system \
   boost-thread \
+  sqlite-dev \
   libevent \
   libzmq \
   shadow \
-  sqlite-dev \
   su-exec
 
 ENV GROESTLCOIN_DATA=/home/groestlcoin/.groestlcoin
-ENV GROESTLCOIN_VERSION=22.0
+ENV GROESTLCOIN_VERSION=2.21.1
 ENV GROESTLCOIN_PREFIX=/opt/groestlcoin-${GROESTLCOIN_VERSION}
 ENV PATH=${GROESTLCOIN_PREFIX}/bin:$PATH
 
