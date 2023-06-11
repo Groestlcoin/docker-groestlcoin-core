@@ -10,8 +10,8 @@ A groestlcoin-core docker image with support for the following platforms:
 
 ## Tags
 
-- `25`, `latest` ([24/Dockerfile](https://github.com/groestlcoin/docker-groestlcoin-core/blob/master/25/Dockerfile)) [**multi-arch**]
-- `25-alpine` ([24/alpine/Dockerfile](https://github.com/groestlcoin/docker-groestlcoin-core/blob/master/25/alpine/Dockerfile))
+- `25`, `latest` ([25/Dockerfile](https://github.com/groestlcoin/docker-groestlcoin-core/blob/master/25/Dockerfile)) [**multi-arch**]
+- `25-alpine` ([25/alpine/Dockerfile](https://github.com/groestlcoin/docker-groestlcoin-core/blob/master/25/alpine/Dockerfile))
 
 - `24` ([24/Dockerfile](https://github.com/groestlcoin/docker-groestlcoin-core/blob/master/24/Dockerfile)) [**multi-arch**]
 - `24-alpine` ([24/alpine/Dockerfile](https://github.com/groestlcoin/docker-groestlcoin-core/blob/master/24/alpine/Dockerfile))
