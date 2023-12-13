@@ -1,7 +1,5 @@
 # Build stage for BerkeleyDB
-FROM alpine as berkeleydb
-
-ARG TARGETPLATFORM
+FROM alpine:3.13.0 as berkeleydb
 
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add autoconf
@@ -21,13 +19,13 @@ RUN mkdir -p ${BERKELEYDB_PREFIX}
 
 WORKDIR /${BERKELEYDB_VERSION}/build_unix
 
-RUN ../dist/configure --enable-cxx --disable-shared --with-pic --prefix=${BERKELEYDB_PREFIX}
+RUN ../dist/configure --enable-cxx --disable-shared --with-pic --prefix=${BERKELEYDB_PREFIX} --build=aarch64-unknown-linux-gnu
 RUN make -j4
 RUN make install
 RUN rm -rf ${BERKELEYDB_PREFIX}/docs
 
 # Build stage for Groestlcoin Core
-FROM alpine as groestlcoin-core
+FROM alpine:3.13.0 as groestlcoin-core
 
 COPY --from=berkeleydb /opt /opt
 
@@ -93,7 +91,7 @@ RUN strip ${GROESTLCOIN_PREFIX}/lib/libgroestlcoinconsensus.a
 RUN strip ${GROESTLCOIN_PREFIX}/lib/libgroestlcoinconsensus.so.0.0.0
 
 # Build stage for compiled artifacts
-FROM alpine
+FROM alpine:3.13.0
 
 ARG UID=100
 ARG GID=101
@@ -107,9 +105,10 @@ RUN apk --no-cache add \
   boost-filesystem \
   boost-system \
   boost-thread \
-  sqlite-dev \
   libevent \
   libzmq \
+  shadow \
+  sqlite-dev \
   su-exec
 
 ENV GROESTLCOIN_DATA=/home/groestlcoin/.groestlcoin
