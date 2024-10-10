@@ -83,9 +83,10 @@ RUN make -j4
 RUN make install
 RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoin-cli
 RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoin-tx
+RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoin-util
+RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoin-wallet
 RUN strip ${GROESTLCOIN_PREFIX}/bin/groestlcoind
-RUN strip ${GROESTLCOIN_PREFIX}/lib/libgroestlcoinconsensus.a
-RUN strip ${GROESTLCOIN_PREFIX}/lib/libgroestlcoinconsensus.so.0.0.0
+
 
 # Build stage for compiled artifacts
 FROM alpine

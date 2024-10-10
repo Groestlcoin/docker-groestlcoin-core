@@ -30,7 +30,7 @@ if [ $(echo "$1" | cut -c1) = "-" ] || [ "$1" = "groestlcoind" ]; then
   set -- "$@" -datadir="$GROESTLCOIN_DATA"
 fi
 
-if [ "$1" = "groestlcoind" ] || [ "$1" = "groestlcoin-cli" ] || [ "$1" = "groestlcoin-tx" ]; then
+if [ "$1" = "groestlcoind" ] || [ "$1" = "groestlcoin-wallet" ] || [ "$1" = "groestlcoin-util" ] || [ "$1" = "groestlcoin-cli" ] || [ "$1" = "groestlcoin-tx" ]; then
   echo
   exec su-exec groestlcoin "$@"
 fi
