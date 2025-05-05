@@ -1,5 +1,5 @@
 # Build stage for BerkeleyDB
-FROM alpine as berkeleydb
+FROM alpine:3.16.0 as berkeleydb
 
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add autoconf
@@ -25,7 +25,7 @@ RUN make install
 RUN rm -rf ${BERKELEYDB_PREFIX}/docs
 
 # Build stage for Groestlcoin Core
-FROM alpine as groestlcoin-core
+FROM alpine:3.16.0 as groestlcoin-core
 
 COPY --from=berkeleydb /opt /opt
 
